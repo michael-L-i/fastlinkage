@@ -1,0 +1,23 @@
+[
+ {
+  "data": "higgs 100k x 28 (standardised)",
+  "method": "ward",
+  "gpu_s": 5.52,
+  "rounds": 74,
+  "pair_work_vs_n2": 2.95
+ },
+ {
+  "data": "higgs 100k x 28 (standardised)",
+  "method": "average_cosine",
+  "gpu_s": 2.28,
+  "rounds": 105,
+  "pair_work_vs_n2": 2.52
+ },
+ {
+  "data": "higgs 100k x 28 (standardised)",
+  "method": "average_sqeuclidean",
+  "gpu_s": 2.46,
+  "rounds": 128,
+  "pair_work_vs_n2": 2.73
+ }
+]

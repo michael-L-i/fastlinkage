@@ -1,0 +1,136 @@
+[
+ {
+  "n": 20000,
+  "method": "ward",
+  "gpu_s": 0.33,
+  "rounds": 48,
+  "pair_work_vs_n2": 3.01,
+  "t_search": 0.27,
+  "t_verify": 0.04,
+  "scipy_s": 3.86,
+  "fastcluster_s": 5.18
+ },
+ {
+  "n": 20000,
+  "method": "average_cosine",
+  "gpu_s": 0.46,
+  "rounds": 62,
+  "pair_work_vs_n2": 3.04,
+  "t_search": 0.41,
+  "t_verify": 0.03,
+  "scipy_s": 4.82
+ },
+ {
+  "n": 20000,
+  "method": "average_sqeuclidean",
+  "gpu_s": 0.42,
+  "rounds": 65,
+  "pair_work_vs_n2": 3.07,
+  "t_search": 0.36,
+  "t_verify": 0.03,
+  "scipy_s": 4.1
+ },
+ {
+  "n": 50000,
+  "method": "ward",
+  "gpu_s": 0.91,
+  "rounds": 61,
+  "pair_work_vs_n2": 3.01,
+  "t_search": 0.77,
+  "t_verify": 0.09,
+  "same_code_cpu_s": 2.18,
+  "fastcluster_s": 31.88
+ },
+ {
+  "n": 50000,
+  "method": "average_cosine",
+  "gpu_s": 0.88,
+  "rounds": 66,
+  "pair_work_vs_n2": 3.05,
+  "t_search": 0.77,
+  "t_verify": 0.05,
+  "same_code_cpu_s": 2.12
+ },
+ {
+  "n": 50000,
+  "method": "average_sqeuclidean",
+  "gpu_s": 1.01,
+  "rounds": 75,
+  "pair_work_vs_n2": 3.08,
+  "t_search": 0.88,
+  "t_verify": 0.07,
+  "same_code_cpu_s": 2.52
+ },
+ {
+  "n": 100000,
+  "method": "ward",
+  "gpu_s": 2.7,
+  "rounds": 61,
+  "pair_work_vs_n2": 3.02,
+  "t_search": 2.37,
+  "t_verify": 0.21
+ },
+ {
+  "n": 100000,
+  "method": "average_cosine",
+  "gpu_s": 2.45,
+  "rounds": 74,
+  "pair_work_vs_n2": 3.05,
+  "t_search": 2.23,
+  "t_verify": 0.11
+ },
+ {
+  "n": 100000,
+  "method": "average_sqeuclidean",
+  "gpu_s": 2.56,
+  "rounds": 78,
+  "pair_work_vs_n2": 3.08,
+  "t_search": 2.28,
+  "t_verify": 0.15
+ },
+ {
+  "n": 200000,
+  "method": "ward",
+  "gpu_s": 8.82,
+  "rounds": 68,
+  "pair_work_vs_n2": 3.02,
+  "t_search": 8.22,
+  "t_verify": 0.38
+ },
+ {
+  "n": 200000,
+  "method": "average_cosine",
+  "gpu_s": 8.22,
+  "rounds": 77,
+  "pair_work_vs_n2": 3.07,
+  "t_search": 7.73,
+  "t_verify": 0.25
+ },
+ {
+  "n": 200000,
+  "method": "average_sqeuclidean",
+  "gpu_s": 8.79,
+  "rounds": 93,
+  "pair_work_vs_n2": 3.09,
+  "t_search": 8.2,
+  "t_verify": 0.32
+ },
+ {
+  "n": 500000,
+  "method": "ward",
+  "gpu_s": 57.1,
+  "rounds": 79,
+  "pair_work_vs_n2": 3.02,
+  "t_search": 55.4,
+  "t_verify": 1.05
+ },
+ {
+  "n": 500000,
+  "method": "average_cosine",
+  "gpu_s": 64.63,
+  "rounds": 84,
+  "pair_work_vs_n2": 3.06,
+  "t_search": 62.85,
+  "t_verify": 0.75
+ }
+]

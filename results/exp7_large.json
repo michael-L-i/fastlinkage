@@ -1,0 +1,77 @@
+{
+ "ward_vs_fastcluster": {
+  "n": 100000,
+  "ours_s": 2.2,
+  "fastcluster_s": 135.4,
+  "max_height_diff": 4.547473508864641e-13,
+  "max_height": 1735.221933806657
+ },
+ "timing": [
+  {
+   "n": 200000,
+   "method": "ward",
+   "s": 6.4,
+   "rounds": 72,
+   "pair_work_vs_n2": 1.58,
+   "t_gpu": 4.7,
+   "t_verify": 0.4,
+   "t_cache": 1.0,
+   "rechecked": 1461
+  },
+  {
+   "n": 200000,
+   "method": "average_cosine",
+   "s": 5.9,
+   "rounds": 109,
+   "pair_work_vs_n2": 1.42,
+   "t_gpu": 4.1,
+   "t_verify": 0.3,
+   "t_cache": 1.1,
+   "rechecked": 27
+  },
+  {
+   "n": 200000,
+   "method": "average_sqeuclidean",
+   "s": 6.1,
+   "rounds": 136,
+   "pair_work_vs_n2": 1.43,
+   "t_gpu": 4.3,
+   "t_verify": 0.4,
+   "t_cache": 1.2,
+   "rechecked": 68
+  },
+  {
+   "n": 500000,
+   "method": "ward",
+   "s": 36.2,
+   "rounds": 85,
+   "pair_work_vs_n2": 1.65,
+   "t_gpu": 31.7,
+   "t_verify": 1.1,
+   "t_cache": 2.6,
+   "rechecked": 1732
+  },
+  {
+   "n": 500000,
+   "method": "average_cosine",
+   "s": 32.5,
+   "rounds": 155,
+   "pair_work_vs_n2": 1.48,
+   "t_gpu": 27.6,
+   "t_verify": 1.0,
+   "t_cache": 3.1,
+   "rechecked": 109
+  },
+  {
+   "n": 500000,
+   "method": "average_sqeuclidean",
+   "s": 33.4,
+   "rounds": 179,
+   "pair_work_vs_n2": 1.49,
+   "t_gpu": 28.2,
+   "t_verify": 1.0,
+   "t_cache": 3.2,
+   "rechecked": 242
+  }
+ ]
+}

@@ -1,0 +1,40 @@
+{
+ "data": "AG News 120k x 384 (all-MiniLM-L6-v2), cosine, single points",
+ "rows": [
+  {
+   "p": 8,
+   "bound_cost_vs_brute": 0.023,
+   "unpruned_mean": 0.628805935382843,
+   "unpruned_median": 0.7682708501815796,
+   "unpruned_p90": 0.9999333620071411
+  },
+  {
+   "p": 16,
+   "bound_cost_vs_brute": 0.044,
+   "unpruned_mean": 0.42613324522972107,
+   "unpruned_median": 0.3361166715621948,
+   "unpruned_p90": 0.9858275055885315
+  },
+  {
+   "p": 32,
+   "bound_cost_vs_brute": 0.086,
+   "unpruned_mean": 0.2001538723707199,
+   "unpruned_median": 0.03936666622757912,
+   "unpruned_p90": 0.7373608350753784
+  },
+  {
+   "p": 64,
+   "bound_cost_vs_brute": 0.169,
+   "unpruned_mean": 0.045419059693813324,
+   "unpruned_median": 0.0010333333630114794,
+   "unpruned_p90": 0.11521332710981369
+  },
+  {
+   "p": 128,
+   "bound_cost_vs_brute": 0.336,
+   "unpruned_mean": 0.0010908416006714106,
+   "unpruned_median": 4.999999873689376e-05,
+   "unpruned_p90": 0.0015033333329483867
+  }
+ ]
+}

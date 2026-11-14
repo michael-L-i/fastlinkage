@@ -1,0 +1,59 @@
+{
+ "data": "AG News 120k x 384, all-MiniLM-L6-v2",
+ "same_tree": [
+  {
+   "n": 20000,
+   "method": "average_cosine",
+   "gpu_s": 0.78,
+   "scipy_s": 47.4,
+   "max_abs_height_diff": 3.1086244689504383e-15,
+   "min_ari": 1.0
+  },
+  {
+   "n": 20000,
+   "method": "ward",
+   "gpu_s": 0.96,
+   "scipy_s": 15.9,
+   "max_abs_height_diff": 2.1316282072803006e-14,
+   "min_ari": 1.0
+  },
+  {
+   "n": 20000,
+   "method": "average_sqeuclidean",
+   "gpu_s": 0.89,
+   "scipy_s": 15.8,
+   "max_abs_height_diff": 2.6645352591003757e-15,
+   "min_ari": 1.0
+  }
+ ],
+ "timing": [
+  {
+   "n": 120000,
+   "method": "average_cosine",
+   "gpu_s": 9.8,
+   "rounds": 138,
+   "pair_work_vs_n2": 2.57,
+   "t_search": 8.7,
+   "t_verify": 0.8,
+   "same_code_cpu_s": 42.2
+  },
+  {
+   "n": 120000,
+   "method": "ward",
+   "gpu_s": 10.4,
+   "rounds": 103,
+   "pair_work_vs_n2": 2.72,
+   "t_search": 9.1,
+   "t_verify": 1.1
+  },
+  {
+   "n": 120000,
+   "method": "average_sqeuclidean",
+   "gpu_s": 9.7,
+   "rounds": 138,
+   "pair_work_vs_n2": 2.57,
+   "t_search": 8.4,
+   "t_verify": 0.8
+  }
+ ]
+}
