@@ -1,0 +1,11 @@
+# Changelog
+
+## 0.1.0 (2026-11-15)
+
+First release.
+
+- `linkage`: exact Ward, average-cosine and average-squared-Euclidean trees in
+  SciPy's format, without the n x n distance matrix.
+- `AgglomerativeClustering`: scikit-learn style estimator on top of it.
+- `cut`: flat clusters from a tree by cluster count or distance threshold.
+- Runs on Apple GPUs (PyTorch MPS) and on the CPU. CUDA is untested.
