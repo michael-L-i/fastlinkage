@@ -1,5 +1,9 @@
 # fastlinkage
 
+[![tests](https://github.com/michael-L-i/fastlinkage/actions/workflows/test.yml/badge.svg)](https://github.com/michael-L-i/fastlinkage/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)
+
 Exact hierarchical clustering on the GPU, without the n x n distance matrix.
 
 It returns the same tree as `scipy.cluster.hierarchy.linkage` for Ward and
@@ -85,6 +89,14 @@ fine = cut(Z, distance_threshold=0.25)
 
 A runnable version is in [`examples/quickstart.py`](examples/quickstart.py).
 
+### Reference
+
+| | |
+|---|---|
+| `linkage(X, method="ward", device=None)` | SciPy-format linkage matrix. `method` is `"ward"`, `"average_cosine"` or `"average_sqeuclidean"`. `device` is `"cuda"`, `"mps"` or `"cpu"`; by default the GPU if there is one. |
+| `cut(Z, n_clusters=None, distance_threshold=None)` | Labels from a tree. Give exactly one of the two. |
+| `AgglomerativeClustering(n_clusters=2, *, metric="euclidean", linkage="ward", distance_threshold=None, device=None)` | scikit-learn style estimator. Supported pairs: `ward` + `euclidean`, `average` + `cosine`, `average` + `sqeuclidean`. |
+
 ## Benchmarks
 
 Measured on an Apple laptop GPU (PyTorch MPS, 18 CPU cores for the baselines).
@@ -167,8 +179,8 @@ Three known ideas and two additions.
 
 5. **A float32 rounding check** with a float64 fallback, described above.
 
-[`docs/NOTES.md`](docs/NOTES.md) has the development notes: what was tried,
-what was dropped, and the numbers for each step.
+[`docs/DESIGN.md`](docs/DESIGN.md) has the details: the neighbour-list rule,
+the rounding check, more measurements, and what was tried and dropped.
 
 ## Related work
 
@@ -206,14 +218,27 @@ checked whether the neighbour-list rule (item 4) is published.
 git clone https://github.com/michael-L-i/fastlinkage && cd fastlinkage
 pip install -e ".[test,bench]"
 pytest                                        # exactness tests, CPU only
-python experiments/exp1_correctness.py        # against scipy
+python experiments/correctness.py             # against SciPy
 python experiments/make_embeddings.py         # AG News embeddings (176 MB)
-python experiments/exp6_cache.py              # 20k to 120k, both versions
-python experiments/exp7_large.py              # fastcluster check, 200k, 500k
+python experiments/neighbour_lists.py         # 20k to 120k points
+python experiments/large_runs.py              # fastcluster check, 200k, 500k
 python experiments/make_charts.py             # the charts above
 ```
 
-Raw numbers are in [`results/`](results).
+[`experiments/`](experiments) lists every script, and the raw numbers are in
+[`results/`](results).
+
+## Repository layout
+
+```
+src/fastlinkage/   the package
+tests/             exactness tests against SciPy and scikit-learn
+examples/          quickstart
+experiments/       benchmark and correctness scripts
+results/           their output (JSON)
+docs/DESIGN.md     how it works, measurements, prior work
+assets/            README charts
+```
 
 ## License
 
