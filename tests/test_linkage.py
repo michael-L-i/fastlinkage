@@ -17,7 +17,7 @@ def blobs(n, d, seed=0, centres=12):
 
 
 def same_partition(a, b):
-    pairs = set(zip(a.tolist(), b.tolist()))
+    pairs = set(zip(a.tolist(), b.tolist(), strict=True))
     return len(pairs) == len(set(a.tolist())) == len(set(b.tolist()))
 
 
