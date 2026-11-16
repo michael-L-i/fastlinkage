@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Tests run on every available device (CPU, CUDA, MPS).
+- CI covers Linux, macOS and Windows.
+- Colab notebook for checking CUDA.
+- PyPI publishing workflow.
+
 ## 0.1.0 (2026-11-15)
 
 First release.

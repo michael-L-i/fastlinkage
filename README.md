@@ -11,12 +11,14 @@ average linkage, runs in seconds at 100,000+ points, and uses memory that
 grows with the number of points, not its square.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/speed-dark.svg">
-  <img src="assets/speed-light.svg" alt="Time to build the exact tree. 20,000 text embeddings, average linkage with cosine distance: 0.8 s against 47 s for SciPy. 100,000 points with 32 features, Ward: 2.2 s against 2.3 minutes for fastcluster. 120,000 text embeddings, Ward: 8.7 s against 59 minutes for fastcluster." width="800">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/michael-L-i/fastlinkage/main/assets/speed-dark.svg">
+  <img src="https://raw.githubusercontent.com/michael-L-i/fastlinkage/main/assets/speed-light.svg" alt="Time to build the exact tree. 20,000 text embeddings, average linkage with cosine distance: 0.8 s against 47 s for SciPy. 100,000 points with 32 features, Ward: 2.2 s against 2.3 minutes for fastcluster. 120,000 text embeddings, Ward: 8.7 s against 59 minutes for fastcluster." width="800">
 </picture>
 
-> **Status: research prototype.** Tested on an Apple laptop GPU (PyTorch MPS)
-> and on the CPU. Not yet tested on CUDA. Not on PyPI yet.
+> **Status: early release.** Tested on Apple GPUs (PyTorch MPS) and on the CPU
+> on Linux, macOS and Windows. NVIDIA GPUs (CUDA) are supported by the code but
+> not yet verified: [this notebook](https://colab.research.google.com/github/michael-L-i/fastlinkage/blob/main/notebooks/cuda_check.ipynb)
+> runs the check on a free Colab GPU. Not on PyPI yet.
 
 ## Why
 
@@ -40,6 +42,14 @@ pip install git+https://github.com/michael-L-i/fastlinkage
 
 Needs Python 3.10+, NumPy, SciPy and PyTorch. It uses CUDA or Apple MPS when
 PyTorch sees one, and the CPU otherwise.
+
+| Hardware | Status |
+|---|---|
+| Apple GPU (MPS) | tested; all benchmarks below |
+| CPU on Linux, macOS, Windows | tested on every commit |
+| NVIDIA GPU (CUDA) | not yet verified |
+
+The package is pure Python on top of PyTorch, so there is nothing to compile.
 
 ## Use
 
@@ -121,8 +131,8 @@ Every timing builds the full tree.
   the gap to SciPy comes from the method, not the hardware.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/scaling-dark.svg">
-  <img src="assets/scaling-light.svg" alt="Exact Ward tree on 32-feature data. fastlinkage: 0.4 s at 20,000 points, 2.2 s at 100,000, 6.4 s at 200,000, 36 s at 500,000. fastcluster: 5.2 s at 20,000, 32 s at 50,000, 2.3 minutes at 100,000." width="800">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/michael-L-i/fastlinkage/main/assets/scaling-dark.svg">
+  <img src="https://raw.githubusercontent.com/michael-L-i/fastlinkage/main/assets/scaling-light.svg" alt="Exact Ward tree on 32-feature data. fastlinkage: 0.4 s at 20,000 points, 2.2 s at 100,000, 6.4 s at 200,000, 36 s at 500,000. fastcluster: 5.2 s at 20,000, 32 s at 50,000, 2.3 minutes at 100,000." width="800">
 </picture>
 
 Time grows with the square of the number of points. About a million points is
@@ -210,7 +220,7 @@ checked whether the neighbour-list rule (item 4) is published.
 - When distances are below float32 resolution (cosine distance between
   almost parallel vectors), the float64 fallback does most of the work and is
   slow. A warning is raised.
-- Not tested on CUDA yet, and not compared with cuhc on the same hardware.
+- Not verified on CUDA yet, and not compared with cuhc on the same hardware.
 
 ## Reproduce
 
@@ -233,6 +243,7 @@ python experiments/make_charts.py             # the charts above
 ```
 src/fastlinkage/   the package
 tests/             exactness tests against SciPy and scikit-learn
+notebooks/         CUDA check for Google Colab
 examples/          quickstart
 experiments/       benchmark and correctness scripts
 results/           their output (JSON)
