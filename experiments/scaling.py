@@ -1,13 +1,12 @@
-"""Experiment 2: timing and round counts as n grows (modest sizes).
+"""Timing and round counts as n grows (modest sizes).
 
 Baselines: scipy (needs the n x n matrix, so 20k points only) and
 fastcluster.linkage_vector, the standard memory-saving exact Ward on the CPU
-(run up to 50k; the first version of this script measured 129 s at 100k).
+(run up to 50k).
 
-usage: python experiments/exp2_scaling.py
+usage: python experiments/scaling.py
 """
 import json
-import sys
 import time
 from pathlib import Path
 
@@ -16,9 +15,9 @@ import numpy as np
 from scipy.cluster.hierarchy import linkage as scipy_linkage
 from sklearn.datasets import make_blobs
 
+from fastlinkage import linkage
+
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
-from fastlinkage.core import linkage  # noqa: E402
 
 SCIPY = {"ward": ("ward", "euclidean"), "average_cosine": ("average", "cosine"),
          "average_sqeuclidean": ("average", "sqeuclidean")}
@@ -49,7 +48,7 @@ def main():
                 row["fastcluster_s"] = round(time.perf_counter() - t0, 2)
             rows.append(row)
             print(row, flush=True)
-    (ROOT / "results" / "exp2_scaling.json").write_text(json.dumps(rows, indent=1))
+    (ROOT / "results" / "scaling.json").write_text(json.dumps(rows, indent=1))
 
 
 if __name__ == "__main__":

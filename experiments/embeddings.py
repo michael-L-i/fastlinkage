@@ -1,12 +1,11 @@
-"""Experiment 5: real text embeddings (AG News, all-MiniLM-L6-v2, 384-d).
+"""Real text embeddings (AG News, all-MiniLM-L6-v2, 384-d).
 
 Part 1: same tree as scipy on the first 20k embeddings.
 Part 2: timing on all 120k (scipy would need a 58 GB matrix).
 
-usage: python experiments/make_embeddings.py && python experiments/exp5_embeddings.py
+usage: python experiments/make_embeddings.py && python experiments/embeddings.py
 """
 import json
-import sys
 import time
 from pathlib import Path
 
@@ -15,9 +14,9 @@ from scipy.cluster.hierarchy import fcluster
 from scipy.cluster.hierarchy import linkage as scipy_linkage
 from sklearn.metrics import adjusted_rand_score
 
+from fastlinkage import linkage
+
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
-from fastlinkage.core import linkage  # noqa: E402
 
 SCIPY = {"average_cosine": ("average", "cosine"), "ward": ("ward", "euclidean"),
          "average_sqeuclidean": ("average", "sqeuclidean")}
@@ -49,7 +48,7 @@ def main():
             row["same_code_cpu_s"] = round(linkage(E, method, device="cpu", return_stats=True)[1]["t_total"], 1)
         out["timing"].append(row)
         print(row, flush=True)
-    (ROOT / "results" / "exp5_embeddings.json").write_text(json.dumps(out, indent=1))
+    (ROOT / "results" / "embeddings.json").write_text(json.dumps(out, indent=1))
 
 
 if __name__ == "__main__":

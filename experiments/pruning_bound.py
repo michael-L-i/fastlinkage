@@ -1,4 +1,4 @@
-"""Experiment 4: could a low-dimensional bound prune the search in high dimensions?
+"""Could a low-dimensional bound prune the search in high dimensions?
 
 Rotate the data onto its principal axes and keep the first p coordinates plus
 the norm of the rest. For unit-free vectors a and b,
@@ -13,7 +13,7 @@ This measures, for sample queries on real embeddings, the fraction of columns
 that the bound fails to rule out. The exact search would cost about
 (p+1)/d + that fraction, relative to brute force.
 
-usage: python experiments/exp4_prune_potential.py
+usage: python experiments/pruning_bound.py
 """
 import json
 from pathlib import Path
@@ -49,7 +49,7 @@ def main():
                      "unpruned_mean": float(frac.mean()), "unpruned_median": float(np.median(frac)),
                      "unpruned_p90": float(np.quantile(frac, 0.9))})
         print(rows[-1], flush=True)
-    (ROOT / "results" / "exp4_prune_potential.json").write_text(json.dumps(
+    (ROOT / "results" / "pruning_bound.json").write_text(json.dumps(
         {"data": "AG News 120k x 384 (all-MiniLM-L6-v2), cosine, single points", "rows": rows}, indent=1))
 
 

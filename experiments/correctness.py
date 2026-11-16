@@ -1,9 +1,9 @@
-"""Experiment 1: does the matrix-free tree match scipy's?
+"""Does the matrix-free tree match scipy's?
 
 Compares merge heights and the flat clusterings cut from the tree, for each
 method, on clustered data and on unstructured data.
 
-usage: python experiments/exp1_correctness.py [device]
+usage: python experiments/correctness.py [device]
 """
 import json
 import sys
@@ -16,9 +16,9 @@ from scipy.cluster.hierarchy import linkage as scipy_linkage
 from sklearn.datasets import make_blobs
 from sklearn.metrics import adjusted_rand_score
 
+from fastlinkage import linkage
+
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
-from fastlinkage.core import linkage  # noqa: E402
 
 SCIPY = {"ward": ("ward", "euclidean"), "average_cosine": ("average", "cosine"),
          "average_sqeuclidean": ("average", "sqeuclidean")}
@@ -48,7 +48,7 @@ def main():
                          "scipy_s": round(ts, 2), "device": st["device"]})
             print(f"{name:16s} {method:20s} height diff={rel:.1e} min ARI={ari:.6f} "
                   f"rounds={st['n_rounds']:3d} ours={st['t_total']:.2f}s scipy={ts:.1f}s", flush=True)
-    (ROOT / "results" / "exp1_correctness.json").write_text(json.dumps(rows, indent=1))
+    (ROOT / "results" / "correctness.json").write_text(json.dumps(rows, indent=1))
 
 
 if __name__ == "__main__":

@@ -1,24 +1,22 @@
-"""Experiment 7: larger runs of the cached version.
+"""Larger runs.
 
 Part 1: 100k points, Ward, against fastcluster's exact memory-saving Ward (an
 independent implementation; scipy cannot run this size).
 Part 2: timings at 200k and 500k points.
 
-usage: python experiments/exp7_large.py
+usage: python experiments/large_runs.py
 """
 import json
-import sys
 import time
 from pathlib import Path
 
 import fastcluster
 import numpy as np
+from neighbour_lists import blobs
+
+from fastlinkage import METHODS, linkage
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
-sys.path.insert(0, str(ROOT / "experiments"))
-from exp6_cache import blobs  # noqa: E402
-from fastlinkage.core import METHODS, linkage  # noqa: E402
 
 
 def main():
@@ -43,7 +41,7 @@ def main():
                    "rechecked": st["rechecked"]}
             out["timing"].append(row)
             print(row, flush=True)
-    (ROOT / "results" / "exp7_large.json").write_text(json.dumps(out, indent=1))
+    (ROOT / "results" / "large_runs.json").write_text(json.dumps(out, indent=1))
 
 
 if __name__ == "__main__":
