@@ -16,7 +16,7 @@ grows with the number of points, not its square.
 </picture>
 
 > **Status: early release.** Tested on NVIDIA GPUs (CUDA), Apple GPUs (PyTorch
-> MPS) and the CPU on Linux, macOS and Windows. Not on PyPI yet.
+> MPS) and the CPU on Linux, macOS and Windows.
 
 ## Why
 
@@ -35,7 +35,7 @@ the matrix:
 ## Install
 
 ```
-pip install git+https://github.com/michael-L-i/fastlinkage
+pip install fastlinkage
 ```
 
 Needs Python 3.10+, NumPy, SciPy and PyTorch. It uses CUDA or Apple MPS when

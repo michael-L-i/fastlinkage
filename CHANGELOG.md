@@ -8,7 +8,7 @@
 - Tests run on every available device (CPU, CUDA, MPS).
 - CI covers Linux, macOS and Windows.
 - Colab notebook that runs the CUDA check.
-- PyPI publishing workflow.
+- First release on PyPI: `pip install fastlinkage`.
 
 ## 0.1.0 (2026-11-15)
 
