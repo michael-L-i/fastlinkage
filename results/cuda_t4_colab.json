@@ -1,22 +1,119 @@
 {
- "source": "notebooks/cuda_check.ipynb on Google Colab, 2026-11-16, commit 3 after v0.1.0",
+ "source": "notebooks/cuda_check.ipynb on Google Colab, 2026-11-16",
  "gpu": "Tesla T4 (15 GB)",
  "host": "2 virtual CPUs, 1 torch thread",
  "torch": "2.14.1+cu130",
  "tests": "47 passed (CPU and CUDA)",
  "rows": [
-  {"n": 20000, "d": 32, "method": "ward", "cuda_s": 2.36, "scipy_s": 22.9, "max_height_diff": 3.4e-13},
-  {"n": 20000, "d": 32, "method": "average_cosine", "cuda_s": 0.78, "scipy_s": 23.4, "max_height_diff": 7.8e-16},
-  {"n": 20000, "d": 32, "method": "average_sqeuclidean", "cuda_s": 1.00, "scipy_s": 23.8, "max_height_diff": 6.8e-13},
-  {"n": 100000, "d": 32, "method": "ward", "cuda_s": 6.79, "fastcluster_s": 489.5, "max_height_diff": 4.5e-13},
-  {"n": 100000, "d": 32, "method": "average_cosine", "cuda_s": 4.59},
-  {"n": 100000, "d": 32, "method": "average_sqeuclidean", "cuda_s": 6.16},
-  {"n": 100000, "d": 384, "method": "ward", "cuda_s": 48.88},
-  {"n": 100000, "d": 384, "method": "average_cosine", "cuda_s": 31.25},
-  {"n": 100000, "d": 384, "method": "average_sqeuclidean", "cuda_s": 47.18},
-  {"n": 200000, "d": 32, "method": "ward", "cuda_s": 15.62},
-  {"n": 200000, "d": 32, "method": "average_cosine", "cuda_s": 12.65},
-  {"n": 200000, "d": 32, "method": "average_sqeuclidean", "cuda_s": 14.66}
+  {
+   "n": 20000,
+   "d": 32,
+   "method": "ward",
+   "scipy_s": 22.9,
+   "max_height_diff": 3.4e-13,
+   "cuda_cpu_float64_s": 2.36,
+   "cuda_s": 1.02
+  },
+  {
+   "n": 20000,
+   "d": 32,
+   "method": "average_cosine",
+   "scipy_s": 23.4,
+   "max_height_diff": 7.8e-16,
+   "cuda_cpu_float64_s": 0.78,
+   "cuda_s": 0.77
+  },
+  {
+   "n": 20000,
+   "d": 32,
+   "method": "average_sqeuclidean",
+   "scipy_s": 23.8,
+   "max_height_diff": 6.8e-13,
+   "cuda_cpu_float64_s": 1.0,
+   "cuda_s": 0.91
+  },
+  {
+   "n": 100000,
+   "d": 32,
+   "method": "ward",
+   "fastcluster_s": 489.5,
+   "max_height_diff": 4.5e-13,
+   "cuda_cpu_float64_s": 6.79,
+   "cuda_s": 3.88
+  },
+  {
+   "n": 100000,
+   "d": 32,
+   "method": "average_cosine",
+   "cuda_cpu_float64_s": 4.59,
+   "cuda_s": 4.01
+  },
+  {
+   "n": 100000,
+   "d": 32,
+   "method": "average_sqeuclidean",
+   "cuda_cpu_float64_s": 6.16,
+   "cuda_s": 5.28
+  },
+  {
+   "n": 100000,
+   "d": 384,
+   "method": "ward",
+   "cuda_cpu_float64_s": 48.88,
+   "cuda_s": 11.38
+  },
+  {
+   "n": 100000,
+   "d": 384,
+   "method": "average_cosine",
+   "cuda_cpu_float64_s": 31.25,
+   "cuda_s": 12.67
+  },
+  {
+   "n": 100000,
+   "d": 384,
+   "method": "average_sqeuclidean",
+   "cuda_cpu_float64_s": 47.18,
+   "cuda_s": 14.82
+  },
+  {
+   "n": 200000,
+   "d": 32,
+   "method": "ward",
+   "cuda_cpu_float64_s": 15.62,
+   "cuda_s": 10.8
+  },
+  {
+   "n": 200000,
+   "d": 32,
+   "method": "average_cosine",
+   "cuda_cpu_float64_s": 12.65,
+   "cuda_s": 9.98
+  },
+  {
+   "n": 200000,
+   "d": 32,
+   "method": "average_sqeuclidean",
+   "cuda_cpu_float64_s": 14.66,
+   "cuda_s": 11.1
+  }
  ],
- "breakdown_100000x384_average_cosine": {"t_total": 31.56, "t_gpu": 5.48, "t_verify": 8.19, "t_cache": 15.66, "pair_work_vs_n2": 1.66, "rechecked": 866, "rounds": 139}
+ "breakdown_100000x384_average_cosine": {
+  "before": {
+   "t_total": 31.56,
+   "t_gpu": 5.48,
+   "t_verify": 8.19,
+   "t_cache": 15.66,
+   "pair_work_vs_n2": 1.66,
+   "rechecked": 866,
+   "rounds": 139
+  },
+  "after": {
+   "t_total": 12.67,
+   "t_gpu": 5.0,
+   "t_verify": 0.67,
+   "t_cache": 4.58
+  }
+ },
+ "note": "cuda_s: float64 checks on the GPU (current). cuda_cpu_float64_s: the same runs before that change, with the float64 checks on the host CPU. Height differences were measured in the first run; after the change 100,000 x 32 Ward differs from fastcluster by 3.4e-13 and the 47 tests pass."
 }

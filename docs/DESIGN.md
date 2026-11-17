@@ -91,6 +91,10 @@ The GPU search runs in float32. Merge decisions and heights are float64:
   than a bound on the float32 rounding error.
 - Otherwise every column inside the bound is fetched and compared in float64.
 - Identical rows are merged up front at height zero.
+- On CUDA the float64 work runs on the GPU, which has float64. Apple GPUs do
+  not, so there it runs on the CPU. On a machine with a weak CPU this matters:
+  on a Colab T4 with 2 CPU cores, moving it to the GPU took a 100,000 x 384
+  run from 31 s to 13 s (`results/cuda_t4_colab.json`).
 
 This matters. The baseline without the check picks a slightly wrong neighbour
 often enough to change the tree at scale:

@@ -15,10 +15,8 @@ grows with the number of points, not its square.
   <img src="https://raw.githubusercontent.com/michael-L-i/fastlinkage/main/assets/speed-light.svg" alt="Time to build the exact tree. 20,000 text embeddings, average linkage with cosine distance: 0.8 s against 47 s for SciPy. 100,000 points with 32 features, Ward: 2.2 s against 2.3 minutes for fastcluster. 120,000 text embeddings, Ward: 8.7 s against 59 minutes for fastcluster." width="800">
 </picture>
 
-> **Status: early release.** Tested on Apple GPUs (PyTorch MPS) and on the CPU
-> on Linux, macOS and Windows. NVIDIA GPUs (CUDA) are supported by the code but
-> not yet verified: [this notebook](https://colab.research.google.com/github/michael-L-i/fastlinkage/blob/main/notebooks/cuda_check.ipynb)
-> runs the check on a free Colab GPU. Not on PyPI yet.
+> **Status: early release.** Tested on NVIDIA GPUs (CUDA), Apple GPUs (PyTorch
+> MPS) and the CPU on Linux, macOS and Windows. Not on PyPI yet.
 
 ## Why
 
@@ -45,9 +43,9 @@ PyTorch sees one, and the CPU otherwise.
 
 | Hardware | Status |
 |---|---|
-| Apple GPU (MPS) | tested; all benchmarks below |
+| Apple GPU (MPS) | tested; main benchmarks below |
 | CPU on Linux, macOS, Windows | tested on every commit |
-| NVIDIA GPU (CUDA) | not yet verified |
+| NVIDIA GPU (CUDA) | tested on a Tesla T4 ([notebook](https://colab.research.google.com/github/michael-L-i/fastlinkage/blob/main/notebooks/cuda_check.ipynb)) |
 
 The package is pure Python on top of PyTorch, so there is nothing to compile.
 
@@ -138,6 +136,20 @@ Every timing builds the full tree.
 Time grows with the square of the number of points. About a million points is
 the practical limit.
 
+### NVIDIA GPU
+
+A free Google Colab machine: Tesla T4 with 2 virtual CPUs. Synthetic data.
+
+| Points | Features | Ward | Average, cosine | Average, sq. Euclidean | Baseline on the same machine |
+|---|---|---|---|---|---|
+| 20,000 | 32 | 1.0 s | 0.8 s | 0.9 s | SciPy 23 to 24 s |
+| 100,000 | 32 | 3.9 s | 4.0 s | 5.3 s | fastcluster Ward 490 s |
+| 100,000 | 384 | 11.4 s | 12.7 s | 14.8 s | not run |
+| 200,000 | 32 | 10.8 s | 10.0 s | 11.1 s | not run |
+
+The trees match SciPy at 20,000 points and fastcluster at 100,000 to 1e-12.
+[`notebooks/cuda_check.ipynb`](notebooks/cuda_check.ipynb) reproduces this.
+
 ## Exactness
 
 The tree is checked against independent implementations:
@@ -216,11 +228,13 @@ checked whether the neighbour-list rule (item 4) is published.
   distance have no per-cluster summary and are not supported.
 - Time is quadratic in the number of points.
 - A float32 copy of every cluster mean lives on the GPU: 8 n d bytes (3 GB
-  for a million points with 384 features).
+  for a million points with 384 features). On CUDA a float64 copy is kept
+  there too when it fits in a quarter of the free memory.
 - When distances are below float32 resolution (cosine distance between
   almost parallel vectors), the float64 fallback does most of the work and is
   slow. A warning is raised.
-- Not verified on CUDA yet, and not compared with cuhc on the same hardware.
+- Tested on one NVIDIA GPU (Tesla T4) so far, and not compared with cuhc on
+  the same hardware.
 
 ## Reproduce
 
