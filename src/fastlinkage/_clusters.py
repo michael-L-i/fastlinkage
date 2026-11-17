@@ -12,6 +12,14 @@ import torch
 from ._distance import exact_key
 
 
+def _float64_fits(device, nbytes):
+    """Whether a float64 array of nbytes can live on the device next to the search."""
+    if torch.device(device).type != "cuda":         # MPS has no float64
+        return False
+    free, _ = torch.cuda.mem_get_info(device)
+    return nbytes <= free // 4
+
+
 class Clusters:
     """State of a run: one summary, one nearest neighbour and one neighbour
     list per cluster.
@@ -31,6 +39,14 @@ class Clusters:
         self.C[:n] = X
         self.G = torch.empty((total, d), dtype=torch.float32, device=device)   # float32 copy on the device
         self.G[:n] = torch.from_numpy(X.astype(np.float32)).to(device)
+        # float64 means for the exact keys: on the device when it supports
+        # float64 and has room (CUDA), otherwise the numpy array itself
+        self.on_device64 = _float64_fits(device, total * d * 8)
+        if self.on_device64:
+            self.C64 = torch.empty((total, d), dtype=torch.float64, device=device)
+            self.C64[:n] = torch.from_numpy(X).to(device)
+        else:
+            self.C64 = torch.from_numpy(self.C)     # shares memory; threaded on the CPU
         self.size = np.ones(total)
         self.var = np.zeros(total)                  # mean squared distance to the cluster mean
         self.norm = np.zeros(total)
@@ -56,7 +72,7 @@ class Clusters:
         out = np.empty(c.shape)
         step = max(1, (1 << 25) // (c.shape[1] * self.C.shape[1]))
         for s in range(0, len(q), step):
-            out[s:s + step] = exact_key(self.method, self.C, self.size, self.var, q[s:s + step], c[s:s + step])
+            out[s:s + step] = exact_key(self.method, self.C64, self.size, self.var, q[s:s + step], c[s:s + step])
         return out
 
     def find(self, ids):
@@ -243,6 +259,8 @@ class Clusters:
         C[new] = (C[a] * sa[:, None] + C[b] * sb[:, None]) / sn[:, None]
         self.norm[new] = np.sqrt(np.einsum("ij,ij->i", C[new], C[new]))
         self.G[new[0]:new[0] + p] = torch.from_numpy(C[new].astype(np.float32)).to(self.device)
+        if self.on_device64:
+            self.C64[new[0]:new[0] + p] = torch.from_numpy(C[new]).to(self.device)
         if self.method == "average_sqeuclidean":
             da = np.einsum("ij,ij->i", C[a] - C[new], C[a] - C[new])
             db = np.einsum("ij,ij->i", C[b] - C[new], C[b] - C[new])

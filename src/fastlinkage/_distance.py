@@ -16,18 +16,18 @@ import torch
 METHODS = ("ward", "average_cosine", "average_sqeuclidean")
 
 
-def exact_key(method, C, size, var, q, c):
+def exact_key(method, Ct, size, var, q, c):
     """Key between each cluster id in q (n,) and its candidates c (n, k).
 
-    C holds the cluster means (one row per cluster id), size and var the
-    cluster sizes and variances."""
-    Ct = torch.from_numpy(C)                      # shares memory; threaded on the CPU
-    cq = Ct[torch.from_numpy(q)]
-    cc = Ct[torch.from_numpy(c)]
+    Ct holds the cluster means as a float64 tensor (one row per cluster id),
+    on the CPU or on a device that supports float64. size and var are the
+    cluster sizes and variances (numpy)."""
+    cq = Ct[torch.from_numpy(q).to(Ct.device)]
+    cc = Ct[torch.from_numpy(c).to(Ct.device)]
     if method == "average_cosine":
-        return 1.0 - torch.einsum("nd,nkd->nk", cq, cc).numpy()
+        return 1.0 - torch.einsum("nd,nkd->nk", cq, cc).cpu().numpy()
     diff = cc - cq[:, None, :]
-    d2 = torch.einsum("nkd,nkd->nk", diff, diff).numpy()
+    d2 = torch.einsum("nkd,nkd->nk", diff, diff).cpu().numpy()
     sq = size[q][:, None]
     if method == "ward":
         return d2 * (sq * size[c] / (sq + size[c]))
