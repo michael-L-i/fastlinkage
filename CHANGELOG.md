@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Comparison with cuhc on the same GPU, in the README.
+
 ## 0.2.1 (2026-11-18)
 
 - Fixed: Ward and squared-Euclidean average linkage returned a wrong tree

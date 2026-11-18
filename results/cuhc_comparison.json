@@ -1,0 +1,140 @@
+{
+ "source": "experiments/cuhc_comparison.py on Google Colab, 2026-11-18 (transcribed from the cell output)",
+ "gpu": "Tesla T4 (15 GB)",
+ "fastlinkage": "0.2.1",
+ "cuhc": "0.1.0",
+ "timing": "best of 3 runs (2 for average linkage and budget)",
+ "ward": [
+  {
+   "data": "normal",
+   "n": 20000,
+   "d": 32,
+   "fastlinkage_s": 0.928,
+   "cuhc_s": 0.098,
+   "height_rel_diff_between": 2.3e-07,
+   "reference": "scipy",
+   "fastlinkage_rel_diff": 7e-16,
+   "cuhc_rel_diff": 2.3e-07,
+   "cuhc_rel_diff_float32_input": 2.3e-07
+  },
+  {
+   "data": "normal",
+   "n": 100000,
+   "d": 32,
+   "fastlinkage_s": 4.285,
+   "cuhc_s": 1.515,
+   "height_rel_diff_between": 2.7e-07
+  },
+  {
+   "data": "blobs",
+   "n": 20000,
+   "d": 32,
+   "fastlinkage_s": 0.871,
+   "cuhc_s": 0.06,
+   "height_rel_diff_between": 2.7e-07,
+   "reference": "scipy",
+   "fastlinkage_rel_diff": 9.9e-16,
+   "cuhc_rel_diff": 2.7e-07,
+   "cuhc_rel_diff_float32_input": 2.7e-07
+  },
+  {
+   "data": "blobs",
+   "n": 100000,
+   "d": 32,
+   "fastlinkage_s": 3.201,
+   "cuhc_s": 0.937,
+   "height_rel_diff_between": 3e-07
+  },
+  {
+   "data": "blobs",
+   "n": 200000,
+   "d": 32,
+   "fastlinkage_s": 8.342,
+   "cuhc_s": 3.928,
+   "height_rel_diff_between": 3.4e-07
+  },
+  {
+   "data": "blobs",
+   "n": 100000,
+   "d": 384,
+   "fastlinkage_s": 9.638,
+   "cuhc_s": 11.402,
+   "height_rel_diff_between": 0.00045
+  }
+ ],
+ "average_cosine": [
+  {
+   "n": 20000,
+   "d": 384,
+   "fastlinkage_s": 1.337,
+   "cuhc_s": 1.265,
+   "height_rel_diff_between": 0.00016,
+   "reference": "scipy",
+   "fastlinkage_rel_diff": 1.5e-14,
+   "cuhc_rel_diff": 0.00016
+  },
+  {
+   "n": 40000,
+   "d": 384,
+   "fastlinkage_s": 2.804,
+   "cuhc_s": 4.651,
+   "height_rel_diff_between": 0.00019
+  },
+  {
+   "n": 100000,
+   "d": 384,
+   "fastlinkage_s": 9.623,
+   "cuhc_error": "MemoryError: cuhc.linkage: the dense distance matrix for 100000 points needs 40.0 GB of GPU memory, which isn't available"
+  }
+ ],
+ "budget": [
+  {
+   "n": 100000,
+   "d": 32,
+   "budget": "1<<25",
+   "fastlinkage_s": 3.258
+  },
+  {
+   "n": 100000,
+   "d": 32,
+   "budget": "1<<27",
+   "fastlinkage_s": 3.177
+  },
+  {
+   "n": 100000,
+   "d": 32,
+   "budget": "1<<28",
+   "fastlinkage_s": 3.149
+  },
+  {
+   "n": 100000,
+   "d": 32,
+   "budget": "1<<29",
+   "fastlinkage_s": 3.216
+  },
+  {
+   "n": 100000,
+   "d": 384,
+   "budget": "1<<25",
+   "fastlinkage_s": 9.696
+  },
+  {
+   "n": 100000,
+   "d": 384,
+   "budget": "1<<27",
+   "fastlinkage_s": 10.063
+  },
+  {
+   "n": 100000,
+   "d": 384,
+   "budget": "1<<28",
+   "fastlinkage_s": 10.143
+  },
+  {
+   "n": 100000,
+   "d": 384,
+   "budget": "1<<29",
+   "fastlinkage_s": 8.663
+  }
+ ]
+}

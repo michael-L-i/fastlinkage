@@ -181,6 +181,14 @@ average linkage relies on kd-trees, which suit low dimensions, and does not
 cover cosine. The search was not exhaustive (bioinformatics UPGMA tools were
 not covered), so "first" is unconfirmed.
 
+Measured against cuhc 0.1.0 on the same Tesla T4 (2026-11-18,
+`results/cuhc_comparison.json`): cuhc's Ward is 14 times faster at 20,000
+points with 32 features, 3.4 times at 100,000 and 2.1 times at 200,000; at
+100,000 points with 384 features the two take about the same time (9.6 s
+here, 11.4 s for cuhc). Its heights differ from SciPy's by 3e-7 for Ward and
+2e-4 for average cosine, where this package is at 1e-14 or better. Larger
+distance blocks (`budget`) made no difference on the T4.
+
 ## Code map
 
 | File | Contents |

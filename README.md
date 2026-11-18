@@ -156,6 +156,35 @@ A free Google Colab machine: Tesla T4 with 2 virtual CPUs. Synthetic data.
 The trees match SciPy at 20,000 points and fastcluster at 100,000 to 1e-12.
 [`notebooks/cuda_check.ipynb`](notebooks/cuda_check.ipynb) reproduces this.
 
+### Against cuhc
+
+[cuhc](https://github.com/shangar21/cuhc) is the closest existing package:
+exact Ward on the GPU by the same rounds, with a hand-written CUDA kernel in
+float32. Both on the same Tesla T4, best of three runs:
+
+| Task | Points | Features | fastlinkage | cuhc |
+|---|---|---|---|---|
+| Ward | 20,000 | 32 | 0.87 s | **0.06 s** |
+| Ward | 100,000 | 32 | 3.2 s | **0.94 s** |
+| Ward | 200,000 | 32 | 8.3 s | **3.9 s** |
+| Ward | 100,000 | 384 | **9.6 s** | 11.4 s |
+| Average, cosine | 20,000 | 384 | 1.34 s | 1.27 s |
+| Average, cosine | 40,000 | 384 | **2.8 s** | 4.7 s |
+| Average, cosine | 100,000 | 384 | **9.6 s** | out of memory (needs 40 GB) |
+
+| Largest relative error in merge heights, against SciPy at 20,000 points | fastlinkage | cuhc |
+|---|---|---|
+| Ward, 32 features | 1e-15 | 3e-7 |
+| Average, cosine, 384 features | 2e-14 | 2e-4 |
+
+cuhc is 2 to 14 times faster for Ward with few features, and the gap narrows
+as the number of points grows. With 384 features the two are level. For
+average linkage cuhc builds the distance matrix, so it stops between 40,000
+and 100,000 points on this GPU. fastlinkage checks every merge in float64;
+cuhc works in float32. Run it with
+[`experiments/cuhc_comparison.py`](experiments/cuhc_comparison.py); the
+numbers are in [`results/cuhc_comparison.json`](results/cuhc_comparison.json).
+
 ## Exactness
 
 The tree is checked against independent implementations:
@@ -245,8 +274,9 @@ checked whether the neighbour-list rule (item 4) is published.
 - Data that merges like a chain (evenly spaced points on a line, for
   example) needs about as many rounds as there are points, and is slow:
   3,000 such points take 8 s on an Apple GPU, against 0.5 s on the CPU.
-- Tested on one NVIDIA GPU (Tesla T4) so far, and not compared with cuhc on
-  the same hardware.
+- For Ward on an NVIDIA GPU with few features, cuhc is several times faster
+  (see the comparison above).
+- Tested on one NVIDIA GPU (Tesla T4) so far.
 
 ## Reproduce
 
