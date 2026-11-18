@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.1 (2026-11-18)
+
+- Fixed: Ward and squared-Euclidean average linkage returned a wrong tree
+  when the values were very large (around 1e15 and above). The input is now
+  rescaled by a power of two before the search, so the units do not matter.
+- Fixed: cosine linkage overflowed on rows with very large or very small
+  values.
+- Tests for tied distances (grids, integers, binary data) and for inputs
+  from 1e-150 to 1e150.
+
 ## 0.2.0 (2026-11-17)
 
 - `linkage` takes SciPy's arguments: `linkage(X, "average", metric="cosine")`.

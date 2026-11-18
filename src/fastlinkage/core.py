@@ -62,6 +62,11 @@ def _identical_rows(X):
     return first[inverse.ravel()]
 
 
+def _power_of_two(x):
+    """The largest power of two that is at most x (elementwise; 0 for 0)."""
+    return np.where(x > 0, np.ldexp(1.0, np.frexp(x)[1] - 1), 0.0)
+
+
 def _as_points(X) -> np.ndarray:
     """X as a contiguous float64 (n, d) array, or a ValueError that says what is wrong."""
     if isinstance(X, torch.Tensor):
@@ -104,13 +109,19 @@ def linkage(X, method: str = "ward", metric: str | None = None, *, device: str |
     t_start = time.perf_counter()
     X = _as_points(X)
     n = len(X)
+    # Bring the values near 1 first, so that neither the norms nor the float32
+    # squared distances overflow whatever the units are. Dividing by a power
+    # of two changes no float64 digit.
     if method == "average_cosine":
-        norms = np.linalg.norm(X, axis=1, keepdims=True)
-        if not np.all(norms > 0):
+        if not X.any(axis=1).all():
             raise ValueError("cosine distance is undefined for zero rows")
-        X = X / norms
+        X = X / _power_of_two(np.abs(X).max(axis=1, keepdims=True))   # only the direction matters
+        X = X / np.linalg.norm(X, axis=1, keepdims=True)
+        scale = 1.0
     else:
         X = X - X.mean(axis=0)  # distances do not change; float32 keeps more digits
+        scale = float(_power_of_two(np.abs(X).max())) or 1.0
+        X = X / scale
 
     cl = Clusters(X, method, device, width or k)
     stats = cl.stats
@@ -155,6 +166,8 @@ def linkage(X, method: str = "ward", metric: str | None = None, *, device: str |
         fresh, pa, pb = new, a, b
 
     Z = to_scipy(np.concatenate(m_a), np.concatenate(m_b), np.concatenate(m_h), n)
+    if method != "average_cosine":
+        Z[:, 2] *= scale if method == "ward" else scale * scale
     stats["t_total"] = time.perf_counter() - t_start
     stats["n_rounds"] = len(stats["rounds"])
     stats["pair_work_vs_n2"] = stats["pair_evals"] / (n * n)

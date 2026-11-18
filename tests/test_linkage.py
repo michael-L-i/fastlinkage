@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 from scipy.cluster.hierarchy import fcluster
 from scipy.cluster.hierarchy import linkage as scipy_linkage
+from scipy.spatial.distance import pdist, squareform
 
 from fastlinkage import METHODS, AgglomerativeClustering, cut, linkage
 
@@ -61,6 +62,65 @@ def test_near_duplicates_below_float32_resolution(method, device):
     Z = linkage(X, method, device=device)
     Zs = scipy_linkage(X, *SCIPY[method])
     np.testing.assert_allclose(Z[:, 2], Zs[:, 2], rtol=1e-7, atol=1e-13)
+
+
+def first_wrong_merge(X, method, Z, tol=1e-9):
+    """Replay Z on the full distance matrix (Lance-Williams update). Returns the
+    first merge that is not a closest pair at its step or has the wrong height,
+    or None. With tied distances several trees are correct; this accepts all of
+    them, where a comparison with scipy's heights would not."""
+    n = len(X)
+    D = np.full((2 * n - 1, 2 * n - 1), np.inf)
+    D[:n, :n] = squareform(pdist(X, SCIPY[method][1]))
+    np.fill_diagonal(D, np.inf)
+    size = np.ones(2 * n - 1)
+    alive = np.arange(2 * n - 1) < n
+    for i, (a, b, h, _) in enumerate(Z):
+        a, b = int(a), int(b)
+        closest = D[np.ix_(alive, alive)].min()
+        slack = tol * max(closest, h) + 1e-13       # 1e-13: pdist's own rounding near zero
+        if not (alive[a] and alive[b]) or abs(D[a, b] - h) > slack or D[a, b] - closest > slack:
+            return i
+        if method == "ward":
+            new = np.sqrt(np.maximum(((size[a] + size) * D[a] ** 2 + (size[b] + size) * D[b] ** 2
+                                      - size * h ** 2) / (size[a] + size[b] + size), 0))
+        else:
+            new = (size[a] * D[a] + size[b] * D[b]) / (size[a] + size[b])
+        alive[[a, b]] = False
+        new[~alive] = np.inf
+        D[[a, b]] = D[:, [a, b]] = np.inf
+        D[n + i] = D[:, n + i] = new
+        alive[n + i], size[n + i] = True, size[a] + size[b]
+    return None
+
+
+def tied_data():
+    rng = np.random.default_rng(8)
+    grid = np.stack(np.meshgrid(np.arange(18.0), np.arange(18.0)), -1).reshape(-1, 2) + 1
+    return {"integers on a line": rng.integers(0, 40, (400, 1)) + 1.0,
+            "evenly spaced line": np.arange(300.0)[:, None] + 1,
+            "grid": grid,
+            "binary": rng.integers(0, 2, (400, 10)) + 0.5}
+
+
+@pytest.mark.parametrize("method", METHODS)
+@pytest.mark.parametrize("name", list(tied_data()))
+def test_tied_distances_give_a_correct_tree(method, name, device):
+    X = tied_data()[name]
+    if method == "average_cosine" and X.shape[1] == 1:
+        pytest.skip("cosine distance needs two features")
+    assert first_wrong_merge(X, method, linkage(X, method, device=device)) is None
+
+
+@pytest.mark.parametrize("method", METHODS)
+@pytest.mark.parametrize("scale", [1e-150, 1e-15, 1e15, 1e150])
+def test_any_units(method, scale, device):
+    if method == "average_sqeuclidean" and scale == 1e150:
+        pytest.skip("the squared distances themselves overflow float64")
+    X = blobs(400, 8, seed=9) * scale
+    Z = linkage(X, method, device=device)
+    Zs = scipy_linkage(X, *SCIPY[method])
+    np.testing.assert_allclose(Z[:, 2], Zs[:, 2], rtol=1e-9)
 
 
 def test_cut(device):

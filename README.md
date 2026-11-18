@@ -239,6 +239,12 @@ checked whether the neighbour-list rule (item 4) is published.
 - When distances are below float32 resolution (cosine distance between
   almost parallel vectors), the float64 fallback does most of the work and is
   slow. A warning is raised.
+- When several pairs are at exactly the same distance (integer or binary
+  data, grids), more than one tree is correct. The tree returned is one of
+  them, but it can differ from the one SciPy picks.
+- Data that merges like a chain (evenly spaced points on a line, for
+  example) needs about as many rounds as there are points, and is slow:
+  3,000 such points take 8 s on an Apple GPU, against 0.5 s on the CPU.
 - Tested on one NVIDIA GPU (Tesla T4) so far, and not compared with cuhc on
   the same hardware.
 
