@@ -1,6 +1,7 @@
 # fastlinkage
 
 [![tests](https://github.com/michael-L-i/fastlinkage/actions/workflows/test.yml/badge.svg)](https://github.com/michael-L-i/fastlinkage/actions/workflows/test.yml)
+[![PyPI](https://img.shields.io/pypi/v/fastlinkage.svg)](https://pypi.org/project/fastlinkage/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)
 
@@ -51,15 +52,19 @@ The package is pure Python on top of PyTorch, so there is nothing to compile.
 
 ## Use
 
-Drop-in for SciPy's `linkage`:
+Drop-in for SciPy's `linkage`, with the same arguments:
 
 ```python
-from fastlinkage import linkage
+from fastlinkage import linkage    # was: from scipy.cluster.hierarchy import linkage
 
-Z = linkage(X, method="ward")                 # scipy: linkage(X, "ward")
-Z = linkage(X, method="average_cosine")       # scipy: linkage(X, "average", metric="cosine")
-Z = linkage(X, method="average_sqeuclidean")  # scipy: linkage(X, "average", metric="sqeuclidean")
+Z = linkage(X, "ward")
+Z = linkage(X, "average", metric="cosine")
+Z = linkage(X, "average", metric="sqeuclidean")
 ```
+
+`X` is a NumPy array or a torch tensor with one point per row. Other
+linkages raise an error that says so; nothing falls back silently to the
+slow path.
 
 `Z` is SciPy's linkage matrix, so everything downstream keeps working:
 
@@ -84,13 +89,14 @@ model.n_clusters_   # how many clusters the threshold gave
 ```
 
 The class follows scikit-learn's `AgglomerativeClustering` (`labels_`,
-`children_`, `distances_`, `fit_predict`). Cutting one tree at several levels
+`children_`, `distances_`, `fit_predict`, `get_params`), so it works with
+`sklearn.base.clone` and in pipelines. Cutting one tree at several levels
 costs almost nothing:
 
 ```python
 from fastlinkage import cut, linkage
 
-Z = linkage(embeddings, method="average_cosine")
+Z = linkage(embeddings, "average", metric="cosine")
 coarse = cut(Z, n_clusters=20)
 fine = cut(Z, distance_threshold=0.25)
 ```
@@ -101,7 +107,7 @@ A runnable version is in [`examples/quickstart.py`](examples/quickstart.py).
 
 | | |
 |---|---|
-| `linkage(X, method="ward", device=None)` | SciPy-format linkage matrix. `method` is `"ward"`, `"average_cosine"` or `"average_sqeuclidean"`. `device` is `"cuda"`, `"mps"` or `"cpu"`; by default the GPU if there is one. |
+| `linkage(X, method="ward", metric=None, *, device=None)` | SciPy-format linkage matrix. `method` and `metric` as in SciPy: `"ward"`, or `"average"` with `"cosine"` or `"sqeuclidean"`. `device` is `"cuda"`, `"mps"` or `"cpu"`; by default the GPU if there is one. |
 | `cut(Z, n_clusters=None, distance_threshold=None)` | Labels from a tree. Give exactly one of the two. |
 | `AgglomerativeClustering(n_clusters=2, *, metric="euclidean", linkage="ward", distance_threshold=None, device=None)` | scikit-learn style estimator. Supported pairs: `ward` + `euclidean`, `average` + `cosine`, `average` + `sqeuclidean`. |
 

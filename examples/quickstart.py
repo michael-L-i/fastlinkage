@@ -15,7 +15,7 @@ X = centres[rng.integers(0, 40, 50_000)] + rng.normal(size=(50_000, 64))
 linkage(X[:2000], "ward")                       # warm up the GPU
 
 t = time.perf_counter()
-Z = linkage(X, method="average_cosine")         # scipy-format linkage matrix
+Z = linkage(X, "average", metric="cosine")      # scipy-format linkage matrix
 print(f"full tree for {len(X):,} points: {time.perf_counter() - t:.1f} s")
 
 labels = cut(Z, n_clusters=40)

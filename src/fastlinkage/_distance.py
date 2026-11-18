@@ -15,6 +15,30 @@ import torch
 
 METHODS = ("ward", "average_cosine", "average_sqeuclidean")
 
+# scipy / scikit-learn spelling (linkage, metric) -> method
+_PAIRS = {("ward", "euclidean"): "ward", ("average", "cosine"): "average_cosine",
+          ("average", "sqeuclidean"): "average_sqeuclidean"}
+_SUPPORTED = ("supported: 'ward' (Euclidean), and 'average' with metric='cosine' or "
+              "metric='sqeuclidean'. Other linkages need the full distance matrix; "
+              "use scipy.cluster.hierarchy.linkage for those")
+
+
+def resolve_method(method, metric=None):
+    """One of METHODS from either spelling: a name in METHODS, or scipy's
+    (method, metric) pair such as ("average", "cosine")."""
+    if metric is None:
+        if method in METHODS:
+            return method
+        if method == "average":
+            raise ValueError("average linkage needs metric='cosine' or metric='sqeuclidean' "
+                             "(plain Euclidean average linkage needs the full distance matrix)")
+    elif (method, metric) in _PAIRS:
+        return _PAIRS[(method, metric)]
+    elif method in METHODS and _PAIRS.get((method.split("_")[0], metric)) == method:
+        return method
+    what = f"method={method!r}" + ("" if metric is None else f" with metric={metric!r}")
+    raise ValueError(f"{what} is not supported; {_SUPPORTED}")
+
 
 def exact_key(method, Ct, size, var, q, c):
     """Key between each cluster id in q (n,) and its candidates c (n, k).

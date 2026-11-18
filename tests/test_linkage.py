@@ -89,6 +89,38 @@ def test_estimator_matches_sklearn(device):
         assert ours.children_.shape == ref.children_.shape
 
 
+def test_scipy_signature(device):
+    X = blobs(300, 6, seed=6)
+    for args in (("ward",), ("ward", "euclidean"), ("average", "cosine"), ("average", "sqeuclidean")):
+        np.testing.assert_allclose(linkage(X, *args, device=device)[:, 2], scipy_linkage(X, *args)[:, 2],
+                                   rtol=1e-9, atol=1e-12)
+    np.testing.assert_array_equal(linkage(X, "average_cosine", device=device),
+                                  linkage(X, "average", metric="cosine", device=device))
+
+
+def test_input_types(device):
+    import torch
+
+    X = blobs(200, 5, seed=7).astype(np.float32)
+    Z = linkage(X, device=device)
+    np.testing.assert_array_equal(Z, linkage(torch.from_numpy(X), device=device))
+    np.testing.assert_array_equal(Z, linkage(X.tolist(), device=device))
+    np.testing.assert_allclose(Z[:, 2], scipy_linkage(X.astype(np.float64), "ward")[:, 2], rtol=1e-9)
+
+
+def test_estimator_params():
+    base = pytest.importorskip("sklearn.base")
+    model = AgglomerativeClustering(n_clusters=None, distance_threshold=0.3, linkage="average", metric="cosine")
+    copy = base.clone(model)
+    assert copy is not model and copy.get_params() == model.get_params()
+    assert copy.set_params(n_clusters=4, distance_threshold=None).n_clusters == 4
+    assert "distance_threshold=None" in repr(copy)
+    with pytest.raises(ValueError):
+        copy.set_params(nonsense=1)
+    X = blobs(100, 7)
+    assert copy.fit(X).n_features_in_ == 7 and len(copy.labels_) == 100
+
+
 def test_bad_arguments():
     X = blobs(20, 3)
     with pytest.raises(ValueError):
@@ -99,3 +131,15 @@ def test_bad_arguments():
         AgglomerativeClustering(n_clusters=3, distance_threshold=1.0).fit(X)
     with pytest.raises(ValueError):
         linkage(np.zeros((5, 3)), "average_cosine")
+    with pytest.raises(ValueError, match="metric"):
+        linkage(X, "average")                       # scipy's default metric needs the matrix
+    with pytest.raises(ValueError):
+        linkage(X, "ward", "cosine")
+    with pytest.raises(ValueError, match="2-D"):
+        linkage(X[0])
+    with pytest.raises(ValueError, match="at least 2 rows"):
+        linkage(X[:1])
+    bad = X.copy()
+    bad[3, 1] = np.nan
+    with pytest.raises(ValueError, match="NaN"):
+        linkage(bad)

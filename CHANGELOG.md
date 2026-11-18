@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.0 (2026-11-17)
+
+- `linkage` takes SciPy's arguments: `linkage(X, "average", metric="cosine")`.
+  The one-word names (`"average_cosine"`) still work.
+- Changed: every argument after `metric` is keyword-only, so `device` must be
+  passed as `device=...`.
+- Torch tensors are accepted as input.
+- Clear errors for input that is not 2-D, has fewer than two rows, or
+  contains NaN or infinity, and for unsupported linkages.
+- `AgglomerativeClustering` has `get_params`, `set_params` and
+  `n_features_in_`, so `sklearn.base.clone` and pipelines accept it.
+- Type hints and a `py.typed` marker.
+
 ## 0.1.1 (2026-11-16)
 
 - Verified on an NVIDIA GPU (Tesla T4): same trees as SciPy and fastcluster.

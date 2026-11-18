@@ -1,13 +1,11 @@
 """Flat clusters from a linkage matrix, and a scikit-learn style estimator."""
 import numpy as np
 
+from ._distance import resolve_method
 from .core import linkage
 
-_METHOD = {("ward", "euclidean"): "ward", ("average", "cosine"): "average_cosine",
-           ("average", "sqeuclidean"): "average_sqeuclidean"}
 
-
-def cut(Z, n_clusters=None, distance_threshold=None):
+def cut(Z, n_clusters: int | None = None, distance_threshold: float | None = None) -> np.ndarray:
     """Cluster label (0 .. k-1) of every point after cutting the tree.
 
     Give exactly one of:
@@ -43,24 +41,40 @@ class AgglomerativeClustering:
     metric="cosine" or "sqeuclidean". Set n_clusters, or set n_clusters=None
     and distance_threshold.
 
-    After fit: labels_, n_clusters_, n_leaves_, children_, distances_, and
-    linkage_matrix_ (scipy's format, for scipy.cluster.hierarchy.dendrogram).
+    After fit: labels_, n_clusters_, n_leaves_, n_features_in_, children_,
+    distances_, and linkage_matrix_ (scipy's format, for
+    scipy.cluster.hierarchy.dendrogram).
+
+    It has get_params and set_params, so sklearn.base.clone, pipelines and
+    parameter searches accept it.
     """
 
-    def __init__(self, n_clusters=2, *, metric="euclidean", linkage="ward",
-                 distance_threshold=None, device=None):
+    _PARAMS = ("n_clusters", "metric", "linkage", "distance_threshold", "device")
+
+    def __init__(self, n_clusters: int | None = 2, *, metric: str = "euclidean", linkage: str = "ward",
+                 distance_threshold: float | None = None, device: str | None = None):
         self.n_clusters = n_clusters
         self.metric = metric
         self.linkage = linkage
         self.distance_threshold = distance_threshold
         self.device = device
 
+    def get_params(self, deep: bool = True) -> dict:
+        return {name: getattr(self, name) for name in self._PARAMS}
+
+    def set_params(self, **params):
+        for name, value in params.items():
+            if name not in self._PARAMS:
+                raise ValueError(f"invalid parameter {name!r}; valid parameters: {list(self._PARAMS)}")
+            setattr(self, name, value)
+        return self
+
+    def __repr__(self) -> str:
+        args = ", ".join(f"{name}={value!r}" for name, value in self.get_params().items())
+        return f"{type(self).__name__}({args})"
+
     def fit(self, X, y=None):
-        method = _METHOD.get((self.linkage, self.metric))
-        if method is None:
-            raise ValueError(
-                f"linkage={self.linkage!r} with metric={self.metric!r} is not supported; "
-                f"supported pairs: {sorted(_METHOD)}")
+        method = resolve_method(self.linkage, self.metric)
         if (self.n_clusters is None) == (self.distance_threshold is None):
             raise ValueError("exactly one of n_clusters and distance_threshold has to be set, "
                              "and the other needs to be None")
@@ -69,9 +83,10 @@ class AgglomerativeClustering:
         self.children_ = Z[:, :2].astype(np.int64)
         self.distances_ = Z[:, 2]
         self.n_leaves_ = len(Z) + 1
+        self.n_features_in_ = int(np.shape(X)[1])
         self.labels_ = cut(Z, self.n_clusters, self.distance_threshold)
         self.n_clusters_ = int(self.labels_.max()) + 1
         return self
 
-    def fit_predict(self, X, y=None):
+    def fit_predict(self, X, y=None) -> np.ndarray:
         return self.fit(X).labels_

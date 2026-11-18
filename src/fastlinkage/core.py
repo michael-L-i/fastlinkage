@@ -39,7 +39,7 @@ import numpy as np
 import torch
 
 from ._clusters import Clusters
-from ._distance import METHODS, height
+from ._distance import METHODS, height, resolve_method
 from ._search import Searcher
 from ._tree import to_scipy
 
@@ -62,13 +62,32 @@ def _identical_rows(X):
     return first[inverse.ravel()]
 
 
-def linkage(X, method="ward", device=None, k=16, segs=256, budget=1 << 25, cache=True,
-            width=None, return_stats=False):
+def _as_points(X) -> np.ndarray:
+    """X as a contiguous float64 (n, d) array, or a ValueError that says what is wrong."""
+    if isinstance(X, torch.Tensor):
+        X = X.detach().cpu().numpy()
+    X = np.ascontiguousarray(X, dtype=np.float64)
+    if X.ndim != 2:
+        raise ValueError(f"X must be a 2-D array of points, one per row; got {X.ndim} dimension(s). "
+                         "A condensed distance matrix is not accepted")
+    if X.shape[0] < 2 or X.shape[1] < 1:
+        raise ValueError(f"X must have at least 2 rows and 1 column; got shape {X.shape}")
+    if not np.isfinite(X).all():
+        raise ValueError("X contains NaN or infinity")
+    return X
+
+
+def linkage(X, method: str = "ward", metric: str | None = None, *, device: str | None = None,
+            k: int = 16, segs: int = 256, budget: int = 1 << 25, cache: bool = True,
+            width: int | None = None, return_stats: bool = False):
     """Exact linkage matrix in scipy's format, without the n x n distance matrix.
 
-    X: (n, d) array of points.
-    method: "ward", "average_cosine" or "average_sqeuclidean".
-    device: "mps", "cuda" or "cpu" (default: the GPU if there is one).
+    X: (n, d) points: a NumPy array, a torch tensor or anything NumPy can convert.
+    method, metric: as in scipy.cluster.hierarchy.linkage. Supported:
+       linkage(X, "ward"), linkage(X, "average", "cosine") and
+       linkage(X, "average", "sqeuclidean"). The one-word names
+       "average_cosine" and "average_sqeuclidean" also work as method.
+    device: "cuda", "mps" or "cpu" (default: the GPU if there is one).
     k: candidates per cluster that come back from a full search.
     segs: about how many segments the columns are cut into for the search.
     budget: number of float32 elements per distance block on the device.
@@ -79,12 +98,11 @@ def linkage(X, method="ward", device=None, k=16, segs=256, budget=1 << 25, cache
 
     Returns Z, an (n - 1, 4) array as scipy.cluster.hierarchy.linkage returns.
     """
-    if method not in METHODS:
-        raise ValueError(f"method must be one of {METHODS}")
+    method = resolve_method(method, metric)
     if device is None:
         device = _default_device()
     t_start = time.perf_counter()
-    X = np.ascontiguousarray(X, dtype=np.float64)
+    X = _as_points(X)
     n = len(X)
     if method == "average_cosine":
         norms = np.linalg.norm(X, axis=1, keepdims=True)
