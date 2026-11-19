@@ -20,6 +20,18 @@ def _float64_fits(device, nbytes):
     return nbytes <= free // 4
 
 
+def _sort_rows(ids, keys):
+    """Sort every row by key, equal keys by id. torch's sort is threaded and
+    several times faster than numpy's lexsort; rows with equal keys are rare
+    and are redone with lexsort so the order does not depend on the input order."""
+    sorted_keys, o = torch.from_numpy(keys).sort(dim=1)
+    sorted_keys, o = sorted_keys.numpy(), o.numpy()
+    tied = ((sorted_keys[:, 1:] == sorted_keys[:, :-1]) & np.isfinite(sorted_keys[:, 1:])).any(1)
+    if tied.any():
+        o[tied] = np.lexsort((ids[tied], keys[tied]), axis=1)
+    return np.take_along_axis(ids, o, 1), sorted_keys
+
+
 class Clusters:
     """State of a run: one summary, one nearest neighbour and one neighbour
     list per cluster.
@@ -93,15 +105,11 @@ class Clusters:
         clusters got a nearest neighbour out of it."""
         W = self.width
         keys = np.where((ids >= 0) & (keys <= r[:, None]), keys, np.inf)
-        o = np.lexsort((ids, keys), axis=1)
-        ids = np.take_along_axis(ids, o, 1)
-        keys = np.take_along_axis(keys, o, 1)
+        ids, keys = _sort_rows(ids, keys)
         dup = (ids[:, 1:] == ids[:, :-1]) & np.isfinite(keys[:, 1:])
         if dup.any():
             keys[:, 1:][dup] = np.inf
-            o = np.lexsort((ids, keys), axis=1)
-            ids = np.take_along_axis(ids, o, 1)
-            keys = np.take_along_axis(keys, o, 1)
+            ids, keys = _sort_rows(ids, keys)
         if ids.shape[1] > W:
             r = np.minimum(r, keys[:, W])        # the nearest entry that does not fit
             ids, keys = ids[:, :W], keys[:, :W]
@@ -125,7 +133,7 @@ class Clusters:
         cur = self.find(ids)
         cur[cur == q[:, None]] = -1
         if known is None:                        # two parents' lists overlap: drop repeats
-            cur = np.sort(cur, axis=1)
+            cur = torch.from_numpy(cur).sort(dim=1)[0].numpy()
             cur[:, 1:][cur[:, 1:] == cur[:, :-1]] = -1
         keys = np.full(cur.shape, np.inf)
         need = cur >= 0
