@@ -24,13 +24,13 @@ class Searcher:
 
     BIG = 1e30
 
-    def __init__(self, method, G, size, var, norm, active, k, segs, budget, device):
+    def __init__(self, method, means, size, var, norm, active, k, segs, budget, device):
+        """means(ids, device): float32 means of those cluster ids, on the device."""
         self.method = method
         self.device = device
         self.size, self.var, self.norm = size, var, norm
         m = len(active)
         self.m = m
-        d = G.shape[1]
         s_act = size[active]
         self.ward_div = False
         self.grouped = False
@@ -60,13 +60,16 @@ class Searcher:
         self.cols = cols                          # cluster id of each device column, -1 = padding
         self.S = len(cols) // w
         self.kk = min(k, self.S)
+        self.budget = budget
         self.rows = max(1, budget // len(cols))
         real = cols >= 0
-        Cg = G.index_select(0, torch.from_numpy(np.maximum(cols, 0)).to(device))
+        Cg = means(np.maximum(cols, 0), device)
+        d = Cg.shape[1]
         if not real.all():
             Cg = Cg * torch.from_numpy(real.astype(np.float32)).to(device)[:, None]
         pad = torch.from_numpy(np.where(real, 0.0, self.BIG).astype(np.float32)).to(device)[:, None]
         one = torch.ones_like(pad)
+        self.pad, self.vp = pad, None
         if method == "average_cosine":
             self.A_t = torch.cat((-Cg, pad), 1).T.contiguous()     # key = -dot
             self.Q = torch.cat((Cg, one), 1)
@@ -76,7 +79,8 @@ class Searcher:
             if method == "average_sqeuclidean":
                 vp = np.zeros(len(cols), np.float32)
                 vp[real] = var[cols[real]]
-                extra = extra + torch.from_numpy(vp).to(device)[:, None]
+                self.vp = torch.from_numpy(vp).to(device)[:, None]
+                extra = extra + self.vp
             self.A_t = torch.cat((-2.0 * Cg, one, extra), 1).T.contiguous()
             self.Q = torch.cat((Cg, n2, one), 1)  # Q @ A_t = squared distance (+ column variance)
         if self.ward_div:
@@ -151,11 +155,125 @@ class Searcher:
                 r = torch.minimum(r, vals[:, kk])              # best of the segments not chosen
             out.append(chosen * w + imin)
             rad.append(r)
-        cand = self.cols[torch.cat(out).cpu().numpy()]
-        r = torch.cat(rad).cpu().numpy().astype(np.float64)
+        return self._finish(torch.cat(out), torch.cat(rad), self._shift(query))
+
+    def _finish(self, col, rad, shift):
+        """Candidate ids and float64 radii from device columns and float32 bounds."""
+        cand = self.cols[col.cpu().numpy()]
+        r = rad.cpu().numpy().astype(np.float64)
         with np.errstate(invalid="ignore"):
             r = np.where(r > 1e29, np.inf, r - 4e-6 * np.abs(r))   # float32 arithmetic in _low
-        return cand, r + self._shift(query)
+        return cand, r + shift
+
+    # ---- every cluster at once ----
+
+    def symmetric_fits(self):
+        """Whether candidates_all can hold its table of segment minima."""
+        return len(self.cols) * self.S <= 8 * self.budget
+
+    def candidates_all(self):
+        """candidates() for every active cluster at once, at about half the cost.
+
+        The key is symmetric, so one block of keys serves its rows and its
+        columns: only pairs (i, j) with i < j are computed, and each block is
+        reduced along both axes into a table of segment minima, one row per
+        cluster. A second look at the k chosen segments of every cluster, one
+        segment at a time, finds the nearest column and the runner-up.
+
+        Returns the cluster ids in column order, then what candidates() returns."""
+        dev, w, S, kk = self.device, self.w, self.S, self.kk
+        inf = float("inf")
+        ncols = len(self.cols)
+        real = self.cols >= 0
+        # the same key from either side: padding and (for average linkage with
+        # squared distances) the variance go into the rows as well
+        if self.method == "average_cosine":
+            Q = torch.cat((self.Q, self.pad), 1)
+            A_t = torch.cat((self.A_t, torch.ones((1, ncols), device=dev)), 0)
+        else:
+            Q = self.Q.clone()
+            Q[:, -2:-1] += self.pad if self.vp is None else self.pad + self.vp
+            A_t = self.A_t
+
+        V = torch.full((ncols, S), inf, device=dev)      # V[j, s]: smallest key from j into segment s
+        ar = torch.arange(ncols, device=dev)
+        r0 = 0
+        while r0 < ncols:
+            a = r0 // w
+            c0 = a * w                                   # columns start at the segment boundary
+            C = ncols - c0
+            R = max(1, self.budget // C)
+            if r0 == c0 and R >= w:
+                R = min(R // w * w, ncols - r0)          # whole segments
+            else:
+                R = min(R, c0 + w - r0)                  # the rest of one segment
+            r1 = r0 + R
+            b = (r1 - 1) // w + 1
+            K = Q[r0:r1] @ A_t[:, c0:]
+            if self.ward_div:
+                K.div_(self.inv[r0:r1, None] + self.inv[None, c0:])
+            K[:, :r1 - c0].masked_fill_(ar[c0:r1][None, :] <= ar[r0:r1][:, None], inf)   # keep i < j
+            V[r0:r1, a:] = torch.minimum(V[r0:r1, a:], K.view(R, S - a, w).amin(2))
+            V[c0:, a:b] = torch.minimum(V[c0:, a:b], K.view(b - a, R // (b - a), C).amin(1).T)
+            r0 = r1
+            del K
+
+        qcol = torch.from_numpy(np.nonzero(real)[0]).to(dev)
+        query = self.cols[real]
+        m = len(query)
+        err = self._dev(self._err(query) * 1.001)
+        sq = self._dev(self.size[query])
+        chosen = torch.empty((m, kk), dtype=torch.int64, device=dev)
+        rest = torch.full((m,), inf, device=dev)
+        step = max(1, self.budget // S)
+        for s in range(0, m, step):
+            vals, order = self._low(V[qcol[s:s + step]], err[s:s + step], sq[s:s + step]).sort(1)
+            chosen[s:s + step] = order[:, :kk]
+            if S > kk:
+                rest[s:s + step] = vals[:, kk]           # best of the segments not chosen
+        del V
+
+        # second look: every cluster against each segment it chose. The
+        # (cluster, segment) entries are sorted by segment and segments with a
+        # similar number of entries are stacked into one batched product.
+        flat = chosen.reshape(-1)
+        by_seg = torch.argsort(flat)
+        counts = torch.bincount(flat, minlength=S).cpu().numpy()
+        start = np.cumsum(counts) - counts
+        A3 = A_t.view(-1, S, w).permute(1, 0, 2).contiguous()        # (segment, feature, column)
+        inv3 = self.inv.view(S, 1, w) if self.ward_div else None
+        imin = torch.empty(m * kk, dtype=torch.int64, device=dev)
+        runner = torch.empty(m * kk, device=dev)
+        todo = [int(x) for x in np.argsort(-counts, kind="stable") if counts[x]]
+        while todo:
+            height = int(counts[todo[0]])                            # most entries in this batch
+            group = todo[:max(1, self.budget // (height * w))]
+            todo = todo[len(group):]
+            G = len(group)
+            entry = torch.cat([by_seg[start[g]:start[g] + counts[g]] for g in group])
+            slot = np.concatenate([i * height + np.arange(counts[g]) for i, g in enumerate(group)])
+            slot = torch.from_numpy(slot).to(dev)
+            qc = torch.zeros(G * height, dtype=torch.int64, device=dev)   # unused slots repeat column 0
+            qc[slot] = qcol[entry // kk]
+            segs = torch.tensor(group, device=dev)
+            K = torch.bmm(Q[qc].view(G, height, -1), A3[segs])       # (segment, entry, column)
+            if self.ward_div:
+                K.div_(self.inv[qc].view(G, height, 1) + inv3[segs])
+            K = K.view(G * height, w)
+            own = qc - segs.repeat_interleave(height) * w            # the cluster's own column, if in this segment
+            inside = ((own >= 0) & (own < w))[:, None]
+            own = own.clamp(0, w - 1)[:, None]
+            K.scatter_(1, own, torch.where(inside, inf, K.gather(1, own)))
+            i = K.argmin(1, keepdim=True)
+            imin[entry] = i[slot, 0]
+            K.scatter_(1, i, inf)
+            runner[entry] = K.amin(1)[slot]
+            del K
+
+        r = self._low(runner.view(m, kk), err, sq, chosen).amin(1)
+        r = torch.minimum(r, rest)
+        shift = np.ones(m) if self.method == "average_cosine" else np.zeros(m)
+        return (query, *self._finish(chosen * w + imin.view(m, kk), r, shift))
 
     def within(self, query, key):
         """All (query index, cluster id) pairs whose exact key could be below key (n,)."""

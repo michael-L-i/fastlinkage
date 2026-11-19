@@ -123,6 +123,25 @@ def test_any_units(method, scale, device):
     np.testing.assert_allclose(Z[:, 2], Zs[:, 2], rtol=1e-9)
 
 
+@pytest.mark.parametrize("method", METHODS)
+@pytest.mark.parametrize("budget", [1 << 12, 1 << 16, 1 << 25])    # part of a segment, a few segments, everything
+def test_symmetric_first_round(method, budget, device, monkeypatch):
+    """The first-round search that uses every distance for both of its ends
+    (large inputs only by default) gives the same trees."""
+    monkeypatch.setattr("fastlinkage._clusters.SYMMETRIC_MIN", 0)
+    X = blobs(3000, 12, seed=10)
+    Z = linkage(X, method, device=device, budget=budget)
+    np.testing.assert_allclose(Z[:, 2], scipy_linkage(X, *SCIPY[method])[:, 2], rtol=1e-9, atol=1e-12)
+    np.testing.assert_array_equal(Z, linkage(X, method, device=device, budget=budget, cache=False))
+    for name, T in tied_data().items():                      # ties, duplicates, padded size groups
+        if method == "average_cosine" and T.shape[1] == 1:
+            continue
+        assert first_wrong_merge(T, method, linkage(T, method, device=device, budget=budget)) is None, name
+    D = np.repeat(blobs(150, 5, seed=11), 4, axis=0)
+    np.testing.assert_allclose(linkage(D, method, device=device, budget=budget, k=3, segs=7)[:, 2],
+                               scipy_linkage(D, *SCIPY[method])[:, 2], rtol=1e-9, atol=1e-12)
+
+
 def test_cut(device):
     X = blobs(800, 8, seed=4)
     Z = linkage(X, "ward", device=device)

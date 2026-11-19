@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Faster, same trees: 1.3 to 1.7 times on an Apple GPU and 1.5 times on the
+  CPU (20,000 points with 32 features 0.30 s to 0.18 s; 100,000 points
+  1.8 s to 1.3 s; 120,000 text embeddings, average cosine, 6.9 s to 4.7 s).
+  - The first round computes each pair of points once instead of twice.
+  - Small searches run on the CPU, which avoids the GPU's fixed cost per round.
+  - `k` defaults to 8 (was 16).
+  - Faster sorting of neighbour lists and numbering of the tree.
+- `experiments/profile_run.py` shows where the time goes in one run.
 - Comparison with cuhc on the same GPU, in the README.
 
 ## 0.2.1 (2026-11-18)

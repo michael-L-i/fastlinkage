@@ -44,7 +44,7 @@ A run takes 50 to 180 rounds. Unstructured data needs more of them (173 on
 
 ## Neighbour lists
 
-A full search returns 16 candidates per cluster and a radius: every cluster
+A full search returns 8 candidates per cluster and a radius: every cluster
 that is not a candidate is at least that far away. By reducibility, a later
 cluster that contains none of the candidates is still at least that far away.
 So when a cluster loses its nearest neighbour, the nearest of its remaining
@@ -118,7 +118,7 @@ Two cases where the result or the speed differs from what you might expect:
 The float32 distance from a block of query clusters to all active clusters is
 one matrix product: the squared norms (and the variance, for average
 linkage) are folded into extra columns. The columns are cut into about 256
-equal segments, and one pass takes the minimum of each segment. The 16
+equal segments, and one pass takes the minimum of each segment. The 8
 segments with the smallest minima supply the candidates. A second look at
 only those segments finds their runners-up, which gives the radius.
 
@@ -130,6 +130,18 @@ instead of to the whole block.
 The search runs at about 13 billion pair evaluations per second at 32
 features, against 16 billion for the bare matrix product on the same GPU. A
 float32 copy of every cluster mean lives on the device: 8 n d bytes.
+
+In the first round every cluster searches, so each distance is wanted twice:
+once for each of its ends. From 30,000 clusters up, `Searcher.candidates_all`
+computes only the pairs (i, j) with i < j. Each block of keys is reduced
+along its rows and along its columns into one table of segment minima, with a
+row per cluster. The second look is then done one segment at a time, for all
+the clusters that chose that segment. This costs about 0.75 of the plain
+search at 32 features and 0.66 at 384 (Apple GPU, 100,000 points).
+
+A search has a fixed cost on the GPU of a few milliseconds, whatever its
+size, and a run has 50 to 100 rounds. Searches of at most 4 million pairs
+(half a million on CUDA) therefore run on the CPU with the same code.
 
 ## Measurements
 
@@ -160,6 +172,11 @@ GPU against CPU, same code:
 | Ward: sort columns by cluster size so the size factor is constant inside a segment | 100k Ward 5.6 s to 2.7 s | Yes |
 | Float64 check with threaded torch instead of numpy | check time roughly halved (1.6 s to 0.8 s at 120k x 384) | Yes |
 | Neighbour lists that survive merges | 1.3x to 1.7x faster from 100k points up | Yes |
+| First round: compute each pair once and reduce every block along both axes | First-round search 0.65 s to 0.49 s (100k x 32) and 1.95 s to 1.28 s (100k x 384) | Yes |
+| Small searches on the CPU | 20k x 32: 0.24 s to 0.21 s. The GPU costs 3 to 4 ms per round regardless of size | Yes |
+| 8 candidates and list entries instead of 16 | 5% to 15% faster: 11% more search work, but half the float64 checks and list upkeep | Yes |
+| Row sort with torch instead of numpy lexsort; tree numbering on plain lists | 100k x 32: 1.82 s to 1.63 s | Yes |
+| Larger distance blocks (`budget`) | No effect on a Tesla T4 or an Apple GPU | No |
 | Lazy re-search: a cluster that lost its neighbour searches again only when another cluster points at it | 25% fewer pair evaluations, but 1.1x to 2.4x slower: many small GPU batches | No |
 | Pruning with a low-dimensional bound (leading principal coordinates plus tail norm), exact | On 120k x 384: 21 to 25 s against 9.8 s. The bound rules out 99.9% of columns (`experiments/pruning_bound.py`), but the masking and gathering cost more than the product they save | No |
 

@@ -46,6 +46,10 @@ from ._tree import to_scipy
 __all__ = ["METHODS", "linkage"]
 
 
+# Searches of at most this many pairs run on the CPU (measured break-even).
+_SMALL_SEARCH = {"mps": 4_000_000, "cuda": 500_000}
+
+
 def _default_device():
     if torch.backends.mps.is_available():
         return "mps"
@@ -83,7 +87,7 @@ def _as_points(X) -> np.ndarray:
 
 
 def linkage(X, method: str = "ward", metric: str | None = None, *, device: str | None = None,
-            k: int = 16, segs: int = 256, budget: int = 1 << 25, cache: bool = True,
+            k: int = 8, segs: int = 256, budget: int = 1 << 25, cache: bool = True,
             width: int | None = None, return_stats: bool = False):
     """Exact linkage matrix in scipy's format, without the n x n distance matrix.
 
@@ -147,7 +151,10 @@ def linkage(X, method: str = "ward", metric: str | None = None, *, device: str |
         todo = active[~cl.valid[active]]
         if len(todo):
             t0 = time.perf_counter()
-            searcher = Searcher(method, cl.G, cl.size, cl.var, cl.norm, active, k, segs, budget, device)
+            # a small search is quicker on the CPU than the GPU's start-up cost
+            small = len(todo) * m <= _SMALL_SEARCH.get(torch.device(device).type, 0)
+            searcher = Searcher(method, cl.means32, cl.size, cl.var, cl.norm, active, k, segs, budget,
+                                "cpu" if small else device)
             stats["t_gpu"] += time.perf_counter() - t0
             cl.full_search(searcher, todo)
             del searcher

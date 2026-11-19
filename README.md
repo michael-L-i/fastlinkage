@@ -228,7 +228,7 @@ Three known ideas and two additions.
 
 3. **Nearest-neighbour search as one matrix product** on the GPU.
 
-4. **Neighbour lists that survive merges.** A search returns 16 candidates and
+4. **Neighbour lists that survive merges.** A search returns 8 candidates and
    a radius beyond which nothing else can be. When a cluster's neighbour is
    merged away, the next one usually comes from that list with no new search,
    and a merged cluster inherits its parents' lists. This halves the search

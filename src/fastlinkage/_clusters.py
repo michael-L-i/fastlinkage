@@ -11,6 +11,8 @@ import torch
 
 from ._distance import exact_key
 
+SYMMETRIC_MIN = 30_000     # use the symmetric search when at least this many clusters all search
+
 
 def _float64_fits(device, nbytes):
     """Whether a float64 array of nbytes can live on the device next to the search."""
@@ -76,6 +78,12 @@ class Clusters:
         self.stats = {"rounds": [], "t_gpu": 0.0, "t_verify": 0.0, "t_cache": 0.0, "pair_evals": 0,
                       "full_searches": 0, "rechecked": 0, "fresh_hits": 0, "fresh_total": 0,
                       "orphan_hits": 0, "orphan_total": 0, "tie_rounds": 0, "recheck_pairs": 0}
+
+    def means32(self, ids, device):
+        """Float32 means of cluster ids, as a tensor on `device`."""
+        if torch.device(device) == torch.device(self.device):
+            return self.G.index_select(0, torch.from_numpy(ids).to(device))
+        return torch.from_numpy(self.C[ids].astype(np.float32)).to(device)   # same values as G
 
     # ---- exact keys and current cluster ids ----
 
@@ -184,9 +192,13 @@ class Clusters:
         a float32 search on the device checked in float64."""
         stats = self.stats
         t0 = time.perf_counter()
-        cand, r = searcher.candidates(query)
+        if len(query) == searcher.m >= SYMMETRIC_MIN and searcher.symmetric_fits():
+            query, cand, r = searcher.candidates_all()      # everyone is searching: half the work
+            stats["pair_evals"] += len(query) * searcher.m * (0.5 + searcher.kk / searcher.S)
+        else:
+            cand, r = searcher.candidates(query)
+            stats["pair_evals"] += len(query) * searcher.m
         stats["t_gpu"] += time.perf_counter() - t0
-        stats["pair_evals"] += len(query) * searcher.m
         stats["full_searches"] += len(query)
         t0 = time.perf_counter()
         cand = np.where(cand < 0, query[:, None], cand)

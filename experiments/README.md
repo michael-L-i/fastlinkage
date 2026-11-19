@@ -15,6 +15,7 @@ after `pip install -e ".[test,bench]"`.
 | `ward_embeddings_check.py` | fastcluster Ward on all 120,000 embeddings (about an hour) | embeddings |
 | `pruning_bound.py` | A search-pruning idea that was measured and dropped | embeddings |
 | `cuhc_comparison.py` | The package against cuhc on the same NVIDIA GPU: time, height error, where cuhc's matrix stops fitting | CUDA, `pip install cuhc` |
+| `profile_run.py` | Where the time goes in one run: stage timers and the slowest functions | |
 | `make_charts.py` | Draws the charts in `assets/` from the result files | |
 
 `brute_force_baseline.py` is the first version of the algorithm: a full search
